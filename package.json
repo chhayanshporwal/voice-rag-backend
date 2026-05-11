@@ -1,0 +1,9 @@
+{
+  "name": "voice-rag-backend",
+  "version": "1.0.0",
+  "description": "Annai — serverless voice RAG backend for Vercel",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  }
+}
