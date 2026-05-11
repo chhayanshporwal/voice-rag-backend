@@ -138,7 +138,7 @@ function setCorsHeaders(res, origin) {
 }
 
 // ─── Main Handler ───────────────────────────────────────────────
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const origin = req.headers.origin || '';
   setCorsHeaders(res, origin);
 
