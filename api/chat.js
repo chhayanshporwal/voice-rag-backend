@@ -19,7 +19,7 @@
 // ─── Constants ──────────────────────────────────────────────────
 const EMBEDDING_MODEL = 'gemini-embedding-001';
 const EMBEDDING_DIM = 768;
-const LLM_MODEL = 'gemini-2.0-flash';
+const LLM_MODEL = 'gemini-2.0-flash-lite';
 const TOP_K = 3;
 const ALLOWED_ORIGIN = 'https://chhayanshporwal.github.io';
 
@@ -190,7 +190,7 @@ module.exports = async function handler(req, res) {
     console.error('Annai RAG Error:', error);
     return res.status(500).json({
       error: 'Annai encountered an internal error. Please try again.',
-      details: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 }
