@@ -21,7 +21,7 @@
 // ─── Constants ──────────────────────────────────────────────────
 const EMBEDDING_MODEL = 'gemini-embedding-001';
 const EMBEDDING_DIM = 768;
-const LLM_MODEL = 'Gemini 3.1 Flash';
+const LLM_MODEL = 'gemini-1.5-flash';
 const TOP_K = 3;
 const ALLOWED_ORIGIN = 'https://chhayanshporwal.github.io';
 
@@ -177,7 +177,7 @@ async function generateResponse(context, question, history) {
       contents,
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 512,
+        maxOutputTokens: 1024,
       },
     }),
   });
