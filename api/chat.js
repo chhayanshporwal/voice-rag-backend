@@ -354,9 +354,9 @@ module.exports = async function handler(req, res) {
       audioBase64,
     });
   } catch (error) {
-    console.error('Annai RAG Error:', error);
+    console.error('Chat API Error:', error);
     return res.status(500).json({
-      error: 'Annai encountered an internal error. Please try again.',
+      error: `Annai encountered an internal error: ${error.toString()}`,
       details: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
