@@ -254,7 +254,10 @@ async function generateSpeech(text, langCode) {
 
       const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${gcTtsKey}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Referer': 'https://chhayanshporwal.github.io/' 
+        },
         body: JSON.stringify({
           input: { text },
           voice: {
@@ -365,7 +368,6 @@ module.exports = async function handler(req, res) {
       detectedLang,
       chunksUsed: matches.length,
       audioBase64,
-      ttsDebug,
     });
   } catch (error) {
     console.error('Annai RAG Error:', error);
