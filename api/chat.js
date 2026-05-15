@@ -200,10 +200,12 @@ function detectLanguageHint(text) {
  * Returns a Base64-encoded MP3 string, or null if both fail.
  */
 async function generateSpeech(text, langCode) {
+  const errors = [];
+
   // ── Primary: ElevenLabs ──
   try {
     const elevenLabsKey = process.env.ELEVENLABS_API_KEY;
-    const voiceId = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
+    const voiceId = process.env.ELEVENLABS_VOICE_ID || '1zUSi8LeHs9M2mV8X6YS';
 
     if (elevenLabsKey) {
       const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
@@ -230,53 +232,59 @@ async function generateSpeech(text, langCode) {
         return Buffer.from(buffer).toString('base64');
       }
 
-      console.warn(`ElevenLabs TTS failed (${res.status}): ${res.statusText}. Falling back to Google Cloud TTS.`);
+      const errText = await res.text();
+      console.warn(`ElevenLabs TTS failed (${res.status}): ${errText}`);
+      errors.push(`ElevenLabs: ${res.status} ${errText}`);
+    } else {
+      errors.push('ElevenLabs: No ELEVENLABS_API_KEY set');
     }
   } catch (err) {
-    console.warn('ElevenLabs TTS error:', err.message, '— falling back to Google Cloud TTS.');
+    console.warn('ElevenLabs TTS error:', err.message);
+    errors.push(`ElevenLabs Exception: ${err.message}`);
   }
 
   // ── Fallback: Google Cloud TTS ──
   try {
     const gcTtsKey = process.env.GOOGLE_CLOUD_TTS_API_KEY;
     if (!gcTtsKey) {
-      console.warn('GOOGLE_CLOUD_TTS_API_KEY not set, skipping TTS fallback.');
-      return null;
+      errors.push('Google TTS: No GOOGLE_CLOUD_TTS_API_KEY set');
+    } else {
+      const voiceName = langCode === 'hi-IN' ? 'hi-IN-Neural2-A' : 'en-US-Neural2-F';
+      const voiceLang = langCode === 'hi-IN' ? 'hi-IN' : 'en-US';
+
+      const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${gcTtsKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: { text },
+          voice: {
+            languageCode: voiceLang,
+            name: voiceName,
+            ssmlGender: 'FEMALE',
+          },
+          audioConfig: {
+            audioEncoding: 'MP3',
+            speakingRate: 1.0,
+            pitch: 1.0,
+          },
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        return data.audioContent || null;
+      }
+      
+      const errText = await res.text();
+      console.warn(`Google Cloud TTS failed (${res.status}): ${errText}`);
+      errors.push(`Google TTS: ${res.status} ${errText}`);
     }
-
-    // Select voice based on detected language
-    const voiceName = langCode === 'hi-IN' ? 'hi-IN-Neural2-A' : 'en-US-Neural2-F';
-    const voiceLang = langCode === 'hi-IN' ? 'hi-IN' : 'en-US';
-
-    const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${gcTtsKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        input: { text },
-        voice: {
-          languageCode: voiceLang,
-          name: voiceName,
-          ssmlGender: 'FEMALE',
-        },
-        audioConfig: {
-          audioEncoding: 'MP3',
-          speakingRate: 1.0,
-          pitch: 1.0,
-        },
-      }),
-    });
-
-    if (!res.ok) {
-      console.warn(`Google Cloud TTS failed (${res.status}): ${await res.text()}`);
-      return null;
-    }
-
-    const data = await res.json();
-    return data.audioContent || null; // Already Base64-encoded by Google
   } catch (err) {
     console.warn('Google Cloud TTS error:', err.message);
-    return null;
+    errors.push(`Google TTS Exception: ${err.message}`);
   }
+  
+  throw new Error(errors.join(' | '));
 }
 
 // ─── CORS ───────────────────────────────────────────────────────
@@ -343,10 +351,12 @@ module.exports = async function handler(req, res) {
 
     // 8. Synthesize speech (ElevenLabs → Google Cloud TTS fallback)
     let audioBase64 = null;
+    let ttsDebug = null;
     try {
       audioBase64 = await generateSpeech(answer, detectedLang);
     } catch (ttsErr) {
       console.warn('TTS pipeline failed entirely:', ttsErr.message);
+      ttsDebug = ttsErr.message;
     }
 
     return res.status(200).json({
@@ -355,6 +365,7 @@ module.exports = async function handler(req, res) {
       detectedLang,
       chunksUsed: matches.length,
       audioBase64,
+      ttsDebug,
     });
   } catch (error) {
     console.error('Annai RAG Error:', error);
