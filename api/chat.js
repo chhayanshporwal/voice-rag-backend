@@ -193,59 +193,16 @@ function detectLanguageHint(text) {
   return 'en-US';
 }
 
-// ─── TTS Fallback Architecture ──────────────────────────────────
+// ─── TTS Generation ──────────────────────────────────────────────
 /**
- * Synthesize speech from text using a two-tier fallback:
- *   Primary:  ElevenLabs (eleven_multilingual_v2)
- *   Fallback: Google Cloud Text-to-Speech (Neural2 voices)
+ * Synthesize speech from text using Google Cloud Text-to-Speech (Neural2 voices)
  *
- * Returns a Base64-encoded MP3 string, or null if both fail.
+ * Returns a Base64-encoded MP3 string, or null if it fails.
  */
 async function generateSpeech(text, langCode) {
   const errors = [];
 
-  // ── Primary: ElevenLabs ──
-  try {
-    const elevenLabsKey = process.env.ELEVENLABS_API_KEY;
-    const voiceId = process.env.ELEVENLABS_VOICE_ID || '1zUSi8LeHs9M2mV8X6YS';
-
-    if (elevenLabsKey) {
-      const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-        method: 'POST',
-        headers: {
-          'xi-api-key': elevenLabsKey,
-          'Content-Type': 'application/json',
-          'Accept': 'audio/mpeg',
-        },
-        body: JSON.stringify({
-          text,
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0.4,
-            use_speaker_boost: true,
-          },
-        }),
-      });
-
-      if (res.ok) {
-        const buffer = await res.arrayBuffer();
-        return Buffer.from(buffer).toString('base64');
-      }
-
-      const errText = await res.text();
-      console.warn(`ElevenLabs TTS failed (${res.status}): ${errText}`);
-      errors.push(`ElevenLabs: ${res.status} ${errText}`);
-    } else {
-      errors.push('ElevenLabs: No ELEVENLABS_API_KEY set');
-    }
-  } catch (err) {
-    console.warn('ElevenLabs TTS error:', err.message);
-    errors.push(`ElevenLabs Exception: ${err.message}`);
-  }
-
-  // ── Fallback: Google Cloud TTS ──
+  // ── Google Cloud TTS ──
   try {
     const gcTtsKey = process.env.GOOGLE_CLOUD_TTS_API_KEY;
     if (!gcTtsKey) {
