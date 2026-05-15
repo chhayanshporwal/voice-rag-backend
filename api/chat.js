@@ -355,6 +355,15 @@ module.exports = async function handler(req, res) {
     });
   } catch (error) {
     console.error('Chat API Error:', error);
+    
+    // Check if the error is a Google AI Studio rate limit (429)
+    const errString = error.toString().toLowerCase();
+    if (errString.includes('429') || errString.includes('rate limit') || errString.includes('quota')) {
+      return res.status(429).json({
+        error: "I'm thinking too fast! You've reached my free-tier limit. Please wait 1 minute and try again.",
+      });
+    }
+
     return res.status(500).json({
       error: `Annai encountered an internal error: ${error.toString()}`,
       details: process.env.NODE_ENV === 'development' ? error.message : undefined,
