@@ -21,7 +21,7 @@
 // ─── Constants ──────────────────────────────────────────────────
 const EMBEDDING_MODEL = 'gemini-embedding-001';
 const EMBEDDING_DIM = 768;
-const LLM_MODEL = 'gemini-1.5-flash';
+const LLM_MODEL = 'gemini-embedding-001';
 const TOP_K = 3;
 const ALLOWED_ORIGIN = 'https://chhayanshporwal.github.io';
 
