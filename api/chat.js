@@ -358,9 +358,17 @@ module.exports = async function handler(req, res) {
     });
   } catch (error) {
     console.error('Annai RAG Error:', error);
+    let models = [];
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GOOGLE_API_KEY}`);
+      const data = await res.json();
+      models = data.models.map(m => m.name);
+    } catch(e) {}
+    
     return res.status(500).json({
       error: 'Annai encountered an internal error. Please try again.',
       details: error.message,
+      availableModels: models
     });
   }
 }
