@@ -336,18 +336,43 @@ module.exports = async function handler(req, res) {
       .map((m, i) => `[Source ${i + 1}]: ${m.metadata?.text || ''}`)
       .join('\n\n');
 
-    // 5. Extract source links
+    // 5. Generate Annai's response (with conversation history)
+    const answer = await generateResponse(context || 'No relevant context found.', trimmedQuery, sanitizedHistory);
+
+    // 6. Filter and Extract source links
+    const PROJECT_DETAILS = {
+      '3D Calcium Imaging Denoising (AI4Life International Grand Challenge)': '/portfolio/',
+      'CallSentry (Android Application)': '/portfolio/callsentry/',
+      'AI Wedding Image Culling System': '/portfolio/ai-wedding-culling/',
+      'Annai Voice-Enabled RAG Architecture': '/portfolio/voice-rag-assistant/',
+      'AI Teacher Recruitment System': '/portfolio/teacher-recruitment-system/'
+    };
+
     const sourcesMap = new Map();
+    const answerLower = answer.toLowerCase();
+    const queryLower = trimmedQuery.toLowerCase();
+    const isAllProjects = queryLower.includes('all') && queryLower.includes('project');
+
     for (const m of matches) {
       const name = m.metadata?.project_name;
       const url = m.metadata?.github_url;
-      if (name && url && !sourcesMap.has(name)) {
-        sourcesMap.set(name, { name, url });
+      
+      if (name && url && name !== 'General' && !sourcesMap.has(name)) {
+        let keyword = name.split(' ')[0].toLowerCase();
+        if (name.includes('Wedding')) keyword = 'wedding';
+        else if (name.includes('Teacher')) keyword = 'teacher';
+        else if (name.includes('Calcium')) keyword = 'calcium';
+        else if (name.includes('Annai')) keyword = 'annai';
+
+        if (isAllProjects || answerLower.includes(keyword) || queryLower.includes(keyword)) {
+          sourcesMap.set(name, { 
+            name, 
+            url, 
+            detailedUrl: PROJECT_DETAILS[name] || null 
+          });
+        }
       }
     }
-
-    // 6. Generate Annai's response (with conversation history)
-    const answer = await generateResponse(context || 'No relevant context found.', trimmedQuery, sanitizedHistory);
 
     // 7. Detect language for TTS
     const detectedLang = detectLanguageHint(answer);
