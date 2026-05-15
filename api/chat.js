@@ -19,7 +19,7 @@
  */
 
 // ─── Constants ──────────────────────────────────────────────────
-const EMBEDDING_MODEL = 'text-embedding-004';
+const EMBEDDING_MODEL = 'gemini-embedding-001';
 const EMBEDDING_DIM = 768;
 const LLM_MODEL = 'gemini-1.5-flash';
 const TOP_K = 3;
