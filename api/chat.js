@@ -21,7 +21,7 @@
 // ─── Constants ──────────────────────────────────────────────────
 const EMBEDDING_MODEL = 'gemini-embedding-001';
 const EMBEDDING_DIM = 768;
-const LLM_MODEL = 'gemini-1.5-flash';
+const LLM_MODEL = 'gemini-flash-latest';
 const TOP_K = 3;
 const ALLOWED_ORIGIN = 'https://chhayanshporwal.github.io';
 
@@ -358,17 +358,9 @@ module.exports = async function handler(req, res) {
     });
   } catch (error) {
     console.error('Annai RAG Error:', error);
-    let models = [];
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GOOGLE_API_KEY}`);
-      const data = await res.json();
-      models = data.models.map(m => m.name);
-    } catch(e) {}
-    
     return res.status(500).json({
       error: 'Annai encountered an internal error. Please try again.',
-      details: error.message,
-      availableModels: models
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 }
